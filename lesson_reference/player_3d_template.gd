@@ -108,21 +108,17 @@ func _physics_process(delta: float) -> void:
 	var target_angle := Vector3.BACK.signed_angle_to(_last_input_direction, Vector3.UP)
 	_skin.global_rotation.y = lerp_angle(_skin.rotation.y, target_angle, rotation_speed * delta)
 
-	# We separate out the y velocity to only interpolate the velocity in the
-	# ground plane, and not affect the gravity.
-	#var y_velocity := velocity.y
-	#velocity.y = 0.0
-	velocity = velocity.move_toward(move_direction * move_speed, acceleration * delta)
-	if is_equal_approx(move_direction.length_squared(), 0.0) and velocity.length_squared() < stopping_speed:
-		velocity = Vector3.ZERO
-	#velocity.y = y_velocity + _gravity * delta
+	velocity.x = move_direction.x * move_speed + acceleration * delta
+	velocity.z = move_direction.z * move_speed + acceleration * delta
+	if is_equal_approx(move_direction.length_squared(), 0.0):
+		velocity.x = 0.0
+		velocity.z = 0.0
 	velocity.y += _get_gravity() * delta
 
 	# Character animations and visual effects.
 	var ground_speed := Vector2(velocity.x, velocity.z).length()
 	var is_just_jumping := Input.is_action_pressed("jump") and is_on_floor()
 	if is_just_jumping:
-		#velocity.y += jump_impulse
 		velocity.y = jump_velocity
 		_skin.jump()
 		_jump_sound.play()
