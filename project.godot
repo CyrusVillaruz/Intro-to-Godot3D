@@ -11,10 +11,10 @@ config_version=5
 [application]
 
 config/name="M2. Get to Know 3D (Interactive Tours)"
+config/tags=PackedStringArray("3d", "platformer")
 run/main_scene="res://game.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
 config/icon="res://icon.png"
-config/tags=PackedStringArray("3d", "platformer")
 
 [autoload]
 

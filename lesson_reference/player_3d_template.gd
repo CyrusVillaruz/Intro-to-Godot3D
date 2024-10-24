@@ -7,13 +7,22 @@ extends CharacterBody3D
 @export var acceleration := 20.0
 ## When the player is on the ground and presses the jump button, the vertical
 ## velocity is set to this value.
-@export var jump_impulse := 12.0
+#@export var jump_impulse := 12.0
 ## Player model rotation speed in arbitrary units. Controls how fast the
 ## character skin orients to the movement or camera direction.
 @export var rotation_speed := 12.0
 ## Minimum horizontal speed on the ground. This controls when the character skin's
 ## animation tree changes between the idle and running states.
 @export var stopping_speed := 1.0
+## Extra variables for a smoother jump
+@export var jump_height : float
+@export var jump_seconds_to_peak : float
+@export var jump_seconds_to_descent : float
+## When the player is on the ground and presses the jump button, the vertical
+## velocity is set to this value.
+@onready var jump_velocity := (2.0 * jump_height) / jump_seconds_to_peak
+@onready var jump_gravity := (-2.0 * jump_height) / (jump_seconds_to_peak * jump_seconds_to_peak)
+@onready var fall_gravity := (-2.0 * jump_height) / (jump_seconds_to_descent * jump_seconds_to_descent)
 
 @export_group("Camera")
 @export_range(0.0, 1.0) var mouse_sensitivity := 0.25
@@ -40,6 +49,9 @@ var _camera_input_direction := Vector2.ZERO
 @onready var _landing_sound: AudioStreamPlayer3D = %LandingSound
 @onready var _jump_sound: AudioStreamPlayer3D = %JumpSound
 @onready var _dust_particles: GPUParticles3D = %DustParticles
+
+func _get_gravity() -> float:
+	return jump_gravity if velocity.y > 0.0 else fall_gravity
 
 
 func _ready() -> void:
@@ -98,18 +110,20 @@ func _physics_process(delta: float) -> void:
 
 	# We separate out the y velocity to only interpolate the velocity in the
 	# ground plane, and not affect the gravity.
-	var y_velocity := velocity.y
-	velocity.y = 0.0
+	#var y_velocity := velocity.y
+	#velocity.y = 0.0
 	velocity = velocity.move_toward(move_direction * move_speed, acceleration * delta)
 	if is_equal_approx(move_direction.length_squared(), 0.0) and velocity.length_squared() < stopping_speed:
 		velocity = Vector3.ZERO
-	velocity.y = y_velocity + _gravity * delta
+	#velocity.y = y_velocity + _gravity * delta
+	velocity.y += _get_gravity() * delta
 
 	# Character animations and visual effects.
 	var ground_speed := Vector2(velocity.x, velocity.z).length()
 	var is_just_jumping := Input.is_action_pressed("jump") and is_on_floor()
 	if is_just_jumping:
-		velocity.y += jump_impulse
+		#velocity.y += jump_impulse
+		velocity.y = jump_velocity
 		_skin.jump()
 		_jump_sound.play()
 	elif not is_on_floor() and velocity.y < 0:
