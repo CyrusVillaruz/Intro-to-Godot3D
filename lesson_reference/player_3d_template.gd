@@ -107,7 +107,7 @@ func _physics_process(delta: float) -> void:
 
 	# Character animations and visual effects.
 	var ground_speed := Vector2(velocity.x, velocity.z).length()
-	var is_just_jumping := Input.is_action_just_pressed("jump") and is_on_floor()
+	var is_just_jumping := Input.is_action_pressed("jump") and is_on_floor()
 	if is_just_jumping:
 		velocity.y += jump_impulse
 		_skin.jump()
