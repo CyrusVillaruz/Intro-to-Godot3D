@@ -69,7 +69,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	)
 	if player_is_using_mouse:
 		_camera_input_direction.x = -event.relative.x * mouse_sensitivity
-		_camera_input_direction.y = -event.relative.y * mouse_sensitivity
+		_camera_input_direction.y = event.relative.y * mouse_sensitivity
 
 
 func _physics_process(delta: float) -> void:
