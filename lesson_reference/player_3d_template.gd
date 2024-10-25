@@ -47,6 +47,7 @@ var ground_height := 0.0
 var _was_on_floor_last_frame := true
 var _camera_input_direction := Vector2.ZERO
 var can_jump := false
+var jump_buffer_timer := 0.0
 
 ## Separate gravity getter to return respective gravity applied
 ## when jumping or falling
@@ -119,10 +120,13 @@ func _physics_process(delta: float) -> void:
 		can_jump = true
 	elif can_jump and coyote_timer.is_stopped():
 		coyote_timer.start()
-
+	
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = 0.1
+	jump_buffer_timer -= delta
 	# Character animations and visual effects.
 	var ground_speed := Vector2(velocity.x, velocity.z).length()
-	var is_just_jumping := Input.is_action_pressed("jump") and can_jump
+	var is_just_jumping : bool = jump_buffer_timer > 0 and can_jump
 	if is_just_jumping:
 		velocity.y = jump_velocity
 		_skin.jump()
