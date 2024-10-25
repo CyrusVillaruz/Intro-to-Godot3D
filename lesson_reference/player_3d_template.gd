@@ -15,23 +15,16 @@ extends CharacterBody3D
 @export var jump_height : float
 @export var jump_seconds_to_peak : float
 @export var jump_seconds_to_descent : float
-## Jump and fall variables set on runtime based on the above variables
-@onready var jump_velocity := (2.0 * jump_height) / jump_seconds_to_peak
-@onready var jump_gravity := (-2.0 * jump_height) / (jump_seconds_to_peak * jump_seconds_to_peak)
-@onready var fall_gravity := (-2.0 * jump_height) / (jump_seconds_to_descent * jump_seconds_to_descent)
 
 @export_group("Camera")
 @export_range(0.0, 1.0) var mouse_sensitivity := 0.25
 @export var tilt_upper_limit := PI / 3.0
 @export var tilt_lower_limit := -PI / 8.0
 
-## Each frame, we find the height of the ground below the player and store it here.
-## The camera uses this to keep a fixed height while the player jumps, for example.
-var ground_height := 0.0
-
-var _gravity := -30.0
-var _was_on_floor_last_frame := true
-var _camera_input_direction := Vector2.ZERO
+## Jump and fall variables set on runtime based on the above variables
+@onready var jump_velocity := (2.0 * jump_height) / jump_seconds_to_peak
+@onready var jump_gravity := (-2.0 * jump_height) / (jump_seconds_to_peak * jump_seconds_to_peak)
+@onready var fall_gravity := (-2.0 * jump_height) / (jump_seconds_to_descent * jump_seconds_to_descent)
 
 ## The last movement or aim direction input by the player. We use this to orient
 ## the character model.
@@ -45,10 +38,19 @@ var _camera_input_direction := Vector2.ZERO
 @onready var _landing_sound: AudioStreamPlayer3D = %LandingSound
 @onready var _jump_sound: AudioStreamPlayer3D = %JumpSound
 @onready var _dust_particles: GPUParticles3D = %DustParticles
+@onready var coyote_timer = $CoyoteTimer
+
+## Each frame, we find the height of the ground below the player and store it here.
+## The camera uses this to keep a fixed height while the player jumps, for example.
+var ground_height := 0.0
+
+var _was_on_floor_last_frame := true
+var _camera_input_direction := Vector2.ZERO
+var can_jump := false
 
 ## Separate gravity getter to return respective gravity applied
 ## when jumping or falling
-func _get_gravity() -> float:
+func get_jump_fall_gravity() -> float:
 	return jump_gravity if velocity.y > 0.0 else fall_gravity
 
 
@@ -81,7 +83,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_camera_input_direction.x = -event.relative.x * mouse_sensitivity
 		_camera_input_direction.y = event.relative.y * mouse_sensitivity
 
-
+var num_timeouts := 0
 func _physics_process(delta: float) -> void:
 	_camera_pivot.rotation.x += _camera_input_direction.y * delta
 	_camera_pivot.rotation.x = clamp(_camera_pivot.rotation.x, tilt_lower_limit, tilt_upper_limit)
@@ -111,15 +113,21 @@ func _physics_process(delta: float) -> void:
 	if is_equal_approx(move_direction.length_squared(), 0.0):
 		velocity.x = 0.0
 		velocity.z = 0.0
-	velocity.y += _get_gravity() * delta
+	velocity.y += get_jump_fall_gravity() * delta
+	
+	if is_on_floor() and not can_jump:
+		can_jump = true
+	elif can_jump and coyote_timer.is_stopped():
+		coyote_timer.start()
 
 	# Character animations and visual effects.
 	var ground_speed := Vector2(velocity.x, velocity.z).length()
-	var is_just_jumping := Input.is_action_pressed("jump") and is_on_floor()
+	var is_just_jumping := Input.is_action_pressed("jump") and can_jump
 	if is_just_jumping:
 		velocity.y = jump_velocity
 		_skin.jump()
 		_jump_sound.play()
+		can_jump = false
 	elif not is_on_floor() and velocity.y < 0:
 		_skin.fall()
 	elif is_on_floor():
