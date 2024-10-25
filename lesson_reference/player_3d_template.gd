@@ -5,9 +5,6 @@ extends CharacterBody3D
 @export var move_speed := 8.0
 ## Ground movement acceleration in meters per second squared.
 @export var acceleration := 20.0
-## When the player is on the ground and presses the jump button, the vertical
-## velocity is set to this value.
-#@export var jump_impulse := 12.0
 ## Player model rotation speed in arbitrary units. Controls how fast the
 ## character skin orients to the movement or camera direction.
 @export var rotation_speed := 12.0
@@ -18,8 +15,7 @@ extends CharacterBody3D
 @export var jump_height : float
 @export var jump_seconds_to_peak : float
 @export var jump_seconds_to_descent : float
-## When the player is on the ground and presses the jump button, the vertical
-## velocity is set to this value.
+## Jump and fall variables set on runtime based on the above variables
 @onready var jump_velocity := (2.0 * jump_height) / jump_seconds_to_peak
 @onready var jump_gravity := (-2.0 * jump_height) / (jump_seconds_to_peak * jump_seconds_to_peak)
 @onready var fall_gravity := (-2.0 * jump_height) / (jump_seconds_to_descent * jump_seconds_to_descent)
@@ -50,6 +46,8 @@ var _camera_input_direction := Vector2.ZERO
 @onready var _jump_sound: AudioStreamPlayer3D = %JumpSound
 @onready var _dust_particles: GPUParticles3D = %DustParticles
 
+## Separate gravity getter to return respective gravity applied
+## when jumping or falling
 func _get_gravity() -> float:
 	return jump_gravity if velocity.y > 0.0 else fall_gravity
 
